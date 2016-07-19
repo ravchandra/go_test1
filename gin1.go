@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	_ "fmt"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 	"gopkg.in/gorp.v1"
@@ -66,16 +65,18 @@ func GetUser(c *gin.Context) {
 		c.JSON(404, gin.H{"error": "user not found"})
 	}
 
-	// curl -i http://localhost:8080/api/v1/users/1
+	// curl -i http://localhost:1234/api/v1/users/1
 }
 
 func PostUser(c *gin.Context) {
 	var user User
-	c.Bind(&user)
+	c.BindJSON(&user)
+
 	if user.Firstname != "" && user.Lastname != "" {
 
 		if insert, _ := dbmap.Exec(`INSERT INTO users (firstname, lastname) VALUES ($1, $2)`, user.Firstname, user.Lastname); insert != nil {
-			user_id, err := insert.LastInsertId()
+			var user_id int64
+			err := dbmap.SelectOne(&user_id, "SELECT max(id) from users")
 			if err == nil {
 				content := &User{
 					Id:        user_id,
@@ -91,8 +92,7 @@ func PostUser(c *gin.Context) {
 	} else {
 		c.JSON(422, gin.H{"error": "fields are empty"})
 	}
-
-	// curl -i -X POST -H "Content-Type: application/json" -d "{ \"firstname\": \"Thea\", \"lastname\": \"Queen\" }" http://localhost:8080/api/v1/users
+	// curl -i -X POST -H "Content-Type: application/json" -d "{ \"firstname\": \"Thea\", \"lastname\": \"Queen\" }" http://localhost:1234/api/v1/users
 }
 
 func UpdateUser(c *gin.Context) {
@@ -102,7 +102,7 @@ func UpdateUser(c *gin.Context) {
 
 	if err == nil {
 		var json User
-		c.Bind(&json)
+		c.BindJSON(&json)
 
 		user_id, _ := strconv.ParseInt(id, 0, 64)
 
@@ -129,7 +129,7 @@ func UpdateUser(c *gin.Context) {
 		c.JSON(404, gin.H{"error": "user not found"})
 	}
 
-	// curl -i -X PUT -H "Content-Type: application/json" -d "{ \"firstname\": \"Thea\", \"lastname\": \"Merlyn\" }" http://localhost:8080/api/v1/users/1
+	// curl -i -X PUT -H "Content-Type: application/json" -d "{ \"firstname\": \"Thea\", \"lastname\": \"Merlyn\" }" http://localhost:1234/api/v1/users/1
 }
 
 func DeleteUser(c *gin.Context) {
@@ -151,7 +151,7 @@ func DeleteUser(c *gin.Context) {
 		c.JSON(404, gin.H{"error": "user not found"})
 	}
 
-	// curl -i -X DELETE http://localhost:8080/api/v1/users/1
+	// curl -i -X DELETE http://localhost:1234/api/v1/users/1
 }
 
 func main() {
